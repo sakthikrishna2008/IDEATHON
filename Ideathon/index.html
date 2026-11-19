@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Dashboard</title>
+    <script>
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <button id="themeToggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode">
+        <span class="theme-label-light">LIGHT<br>MODE</span>
+        <span class="theme-icon" aria-hidden="true">
+            <span class="theme-symbol-sun">☼</span>
+            <span class="theme-symbol-moon">☾</span>
+        </span>
+        <span class="theme-label-dark">DARK<br>MODE</span>
+    </button>
+
+    <h1>Interactive Dashboard</h1>
+
+    <div class="dashboard">
+
+        <div class="card" onclick="openPage('map.html')">
+            <h2>Map Layers</h2>
+            <p>Radar, Forecast, Ships</p>
+        </div>
+
+        <div class="card" onclick="openPage('slider.html')">
+            <h2>Time Slider</h2>
+            <p>Animate data over time</p>
+        </div>
+
+        <div class="card" onclick="openPage('suspects.html')">
+            <h2>Suspect Panel</h2>
+            <p>Ranked objects and scores</p>
+        </div>
+
+        <div class="card" onclick="openPage('weights.html')">
+            <h2>Weight Sliders</h2>
+            <p>Adjust ranking weights</p>
+        </div>
+
+        <div class="card" onclick="openPage('report.html')">
+            <h2>Incident Report</h2>
+            <p>Generate reports</p>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

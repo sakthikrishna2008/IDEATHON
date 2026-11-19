@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Map</title>
+    <script>
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+    </script>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="map-page">
+    <main id="oceanMap" aria-label="Interactive ocean map"></main>
+
+    <header class="map-toolbar">
+        <a class="map-back" href="index.html">← Dashboard</a>
+        <div class="map-heading">
+            <h1>Ocean Map</h1>
+            <span>Drag to rotate · Scroll to zoom</span>
+        </div>
+        <button id="resetMap" class="map-reset" type="button">Reset view</button>
+    </header>
+
+    <button id="themeToggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode">
+        <span class="theme-label-light">LIGHT<br>MODE</span>
+        <span class="theme-icon" aria-hidden="true">
+            <span class="theme-symbol-sun">☼</span>
+            <span class="theme-symbol-moon">☾</span>
+        </span>
+        <span class="theme-label-dark">DARK<br>MODE</span>
+    </button>
+
+    <div id="mapStatus" class="map-status" role="status">Loading ocean map…</div>
+    <div id="shipStatus" class="ship-status" role="status">
+        <strong>AISStream</strong>
+        <span id="shipStatusMessage">Checking live ship feed…</span>
+    </div>
+    <div class="map-disclaimer">Bathymetry is for reference only—not for navigation.</div>
+
+    <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
+    <script src="script.js"></script>
+    <script src="map.js"></script>
+</body>
+</html>

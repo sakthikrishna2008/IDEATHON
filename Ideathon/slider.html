@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Time Slider</title>
+    <script>
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button id="themeToggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode">
+    <span class="theme-label-light">LIGHT<br>MODE</span>
+    <span class="theme-icon" aria-hidden="true">
+        <span class="theme-symbol-sun">☼</span>
+        <span class="theme-symbol-moon">☾</span>
+    </span>
+    <span class="theme-label-dark">DARK<br>MODE</span>
+</button>
+<h1>Time Slider</h1>
+
+<p>Time animation controls go here.</p>
+
+<a href="index.html">⬅ Back to Dashboard</a>
+
+<script src="script.js"></script>
+</body>
+</html>
