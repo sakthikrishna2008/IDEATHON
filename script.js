@@ -477,7 +477,7 @@ const HOUR_MS = 60 * 60 * 1000;
                 { id: "gapWeight", output: "gapValue", key: "aisGap" }
             ];
             let spills = [], ships = [], crossingEvents = [], selectedSpillId = "";
-            let currentTime = MOCK_NOW, playDirection = -1, animationFrame = 0, previousFrame = 0, reportRun = 0, toastTimer = 0;
+            let currentTime = MOCK_NOW, playDirection = -1, animationFrame = 0, previousFrame = 0, reportRun = 0, toastTimer = 0, focusPopupTimer = 0, focusedShipId = "";
             const notifiedCrossings = new Set();
 
             L.polygon(SEA_POLYGON, {
@@ -855,6 +855,12 @@ const HOUR_MS = 60 * 60 * 1000;
             }
 
             function focusShip(ship) {
+                if (focusedShipId === ship.id && focusPopupTimer) return;
+                focusedShipId = ship.id;
+                window.clearTimeout(focusPopupTimer);
+                focusPopupTimer = 0;
+                map.stop();
+                map.closePopup();
                 const toggle = byId("shipsToggle");
                 if (!toggle.checked) {
                     toggle.checked = true;
@@ -866,7 +872,10 @@ const HOUR_MS = 60 * 60 * 1000;
                 selectedRoute.addLayer(L.polyline(path, { color: "#9af4ff", weight: 2.5, opacity: .95 }));
                 updateTimeline(ship.closestApproachTime, false);
                 map.flyTo([ship.currentState.lat, ship.currentState.lon], Math.max(map.getZoom(), 7), { duration: 1.1 });
-                window.setTimeout(() => markers.get(ship.id).openPopup(), 1150);
+                focusPopupTimer = window.setTimeout(() => {
+                    if (focusedShipId === ship.id) markers.get(ship.id).openPopup();
+                    focusPopupTimer = 0;
+                }, 1150);
             }
 
             function buildReport() {
