@@ -1,13 +1,14 @@
 const HOUR_MS = 60 * 60 * 1000;
         const USE_MOCK = true;
         const API_BASE = "http://localhost:8000";
-        // Edit the west-side points to follow the coast, then adjust the north/east/south limits.
+        // Approximate the east-coast shoreline with a small seaward safety buffer.
         const SEA_POLYGON = [
-            [10.3,80.05],[10.6,80.02],[11,80.0],[11.5,80.06],[12,80.15],
-            [12.5,80.22],[13.0827,80.2707],[13.5,80.32],[14,80.35],[14.5,80.37],
-            [15,80.35],[15.5,80.3],[16,80.3],[16.5,80.4],[16.5,84.5],[10.3,84.5]
+            [10.3,79.95],[10.36,79.91],[11,79.91],[12.056,79.91],
+            [13.006,80.34],[13.5,80.31],[13.836,80.28],[14.5,80.18],
+            [15.136,80.08],[15.5,80.22],[15.899,80.38],[15.952,80.84],
+            [16.31,81.74],[16.5,82.12],[16.5,84.5],[10.3,84.5]
         ];
-        const CHENNAI_PORT = { lat: 13.0827, lon: 80.2707 };
+        const CHENNAI_PORT = { lat: 13.1, lon: 80.42 };
 
         function isWater(lat, lon) {
             const point = { lat, lon };
@@ -352,19 +353,19 @@ const HOUR_MS = 60 * 60 * 1000;
             const failures = [];
             shipList.forEach((ship) => {
                 ship.path.forEach((point, index) => {
-                    if (!isWater(point.lat, point.lon)) failures.push({ shipId: ship.id, sample: index, point });
+                    if (!isNavigableWater(point.lat, point.lon)) failures.push({ shipId: ship.id, sample: index, point });
                     if (index > 0) {
                         const previous = ship.path[index - 1];
                         for (let step = 1; step < 6; step++) {
                             const part = step / 6;
                             const lat = previous.lat + (point.lat - previous.lat) * part;
                             const lon = previous.lon + (point.lon - previous.lon) * part;
-                            if (!isWater(lat, lon)) failures.push({ shipId: ship.id, segment: index - 1, part, lat, lon });
+                            if (!isNavigableWater(lat, lon)) failures.push({ shipId: ship.id, segment: index - 1, part, lat, lon });
                         }
                     }
                 });
             });
-            if (failures.length) console.warn("Ship water-mask validation found land points.", failures);
+            if (failures.length) console.warn("Ship water-mask validation found unsafe points.", failures);
             else console.info(`Ship water-mask validation passed for ${shipList.length} vessels.`);
             return failures;
         }
@@ -613,14 +614,25 @@ const HOUR_MS = 60 * 60 * 1000;
                 ship.backtrackOrigin = backtrack[backtrack.length - 1].centroid;
             }
 
-            function shipIcon(ship) {
+            function shipIconStatus(ship) {
                 const risk = ship.score >= 72 ? "high" : ship.score >= 52 ? "medium" : "";
-                const status = ship.isCrossing ? "crossing" : risk;
+                return ship.isCrossing ? "crossing" : risk;
+            }
+
+            function shipIcon(ship) {
+                const status = shipIconStatus(ship);
                 return L.divIcon({
                     className: "ship-icon-shell",
                     html: `<div class="ship-mark"><span class="ship-dot ${status}"></span><span class="ship-code">${ship.id}</span></div>`,
                     iconSize: [42, 22], iconAnchor: [9, 11]
                 });
+            }
+
+            function updateShipIcon(ship) {
+                const status = shipIconStatus(ship);
+                if (ship.iconStatus === status) return;
+                ship.iconStatus = status;
+                markers.get(ship.id).setIcon(shipIcon(ship));
             }
 
             function popupContent(ship) {
@@ -670,6 +682,7 @@ const HOUR_MS = 60 * 60 * 1000;
                 ships.forEach((ship) => {
                     const points = ship.path.map((point) => [point.lat, point.lon]);
                     L.polyline(points, { color: "#54e6f2", weight: 1.2, opacity: .22, dashArray: "4 8" }).addTo(layers.ships);
+                    ship.iconStatus = shipIconStatus(ship);
                     const marker = L.marker(points[0], { icon: shipIcon(ship), title: `${ship.name} · simulated AIS` })
                         .bindPopup(() => popupContent(ship));
                     marker.addTo(layers.ships);
@@ -733,8 +746,12 @@ const HOUR_MS = 60 * 60 * 1000;
                     );
                     const marker = markers.get(ship.id);
                     marker.setLatLng([state.lat, state.lon]);
-                    marker.setOpacity(state.aisOn ? 1 : .38);
-                    marker.setIcon(shipIcon(ship));
+                    const opacity = state.aisOn ? 1 : .38;
+                    if (ship.markerOpacity !== opacity) {
+                        ship.markerOpacity = opacity;
+                        marker.setOpacity(opacity);
+                    }
+                    updateShipIcon(ship);
                 });
             }
 
@@ -824,7 +841,7 @@ const HOUR_MS = 60 * 60 * 1000;
                     ship.score = total ? weightInputs.reduce((sum, item) =>
                         sum + ship[item.key] * Number(byId(item.id).value), 0
                     ) / total : 0;
-                    markers.get(ship.id).setIcon(shipIcon(ship));
+                    updateShipIcon(ship);
                 });
                 const list = byId("suspectList");
                 const before = new Map([...list.children].map((row) => [row.dataset.shipId, row.getBoundingClientRect().top]));
@@ -1126,8 +1143,13 @@ const HOUR_MS = 60 * 60 * 1000;
             }
 
             function bindControls() {
-                byId("zoomIn").addEventListener("click", () => map.zoomIn());
-                byId("zoomOut").addEventListener("click", () => map.zoomOut());
+                const zoomMap = (direction) => {
+                    map.stop();
+                    if (direction > 0) map.zoomIn(undefined, { animate: false });
+                    else map.zoomOut(undefined, { animate: false });
+                };
+                byId("zoomIn").addEventListener("click", () => zoomMap(1));
+                byId("zoomOut").addEventListener("click", () => zoomMap(-1));
                 map.on("zoomend", updateZoom);
                 byId("basemapTheme").addEventListener("change", (event) => {
                     const theme = event.currentTarget.value;
